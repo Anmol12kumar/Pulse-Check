@@ -17,23 +17,13 @@ const userSchema = new mongoose.Schema(
     { timestamps: true }
 );
 
-// userSchema.pre("save", function (next) {
-//   if (!this.isModified("password")) {
-//     return next();
-//   }
-//   console.log(next);
+userSchema.pre('save', async function() {
+    if (!this.isModified('password')) return;
+    this.password = await bcrypt.hash(this.password, 10);
+});
 
-//   bcrypt.hash(this.password, 10, (err, hash) => {
-//     if (err) return next(err);
-//     this.password = hash;
-//     next();
-//   });
-// });
+userSchema.methods.comparePassword = function(candidatePassword) {
+    return bcrypt.compare(candidatePassword, this.password);
+};
 
-// userSchema.methods.comparePassword = function (candidatePassword) {
-//   return bcrypt.compare(candidatePassword, this.password);
-// };
-
-// userSchema.index({ email: 1 });
-
-module.exports = mongoose.model("Users", userSchema);
+module.exports = mongoose.model("User", userSchema);

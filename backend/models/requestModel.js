@@ -1,4 +1,5 @@
-const { Schema, model } = require('../connection'); 
+const mongoose = require('mongoose');
+const { Schema, model } = mongoose;
 
 const requestSchema = new Schema({
     method: { 
@@ -9,7 +10,7 @@ const requestSchema = new Schema({
     url: { type: String, required: true },
     body: { type: Schema.Types.Mixed }, // flexible payload
     headers: { type: Map, of: String }, // dynamic headers
-    user: { type: Schema.Types.ObjectId, ref: 'User', required: true }
+    user: { type: Schema.Types.ObjectId, ref: 'User', required: false }
 }, { timestamps: true });
 
 requestSchema.index({ user: 1, url: 1 });// optimize queries by user and url

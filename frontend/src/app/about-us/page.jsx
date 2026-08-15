@@ -4,61 +4,109 @@ import Link from 'next/link';
 
 const About = () => {
     return (
-        <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-gray-800 text-gray-100 font-sans flex flex-col">
+        <div className="min-h-screen bg-gray-950 text-gray-100 font-sans flex flex-col selection:bg-teal-500 selection:text-gray-950">
+            {/* Navigation */}
+            <nav className="flex justify-between items-center px-6 md:px-12 py-4 bg-gray-950/70 backdrop-blur-md border-b border-gray-800/80 sticky top-0 z-50">
+                <Link href="/" className="flex items-center gap-2 group">
+                    <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-teal-400 to-blue-500 flex items-center justify-center shadow-lg shadow-teal-500/20 group-hover:scale-105 transition-transform duration-200">
+                        <span className="text-gray-950 font-black text-lg">⚡</span>
+                    </div>
+                    <span className="text-xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-blue-400">
+                        Pulse Check
+                    </span>
+                </Link>
 
-            {/* Header */}
-            <header className="px-8 py-6 bg-gradient-to-r from-teal-700 via-blue-800 to-purple-900 shadow-lg">
-                <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-pink-500">
-                    About Pulse Check
-                </h1>
-            </header>
+                <div className="flex items-center gap-4 sm:gap-6 text-sm font-semibold">
+                    <Link href="/" className="text-gray-400 hover:text-teal-400 transition">
+                        Home
+                    </Link>
+                    <Link href="/tool" className="text-gray-400 hover:text-teal-400 transition">
+                        Workspace
+                    </Link>
+                    <Link
+                        href="/login"
+                        className="px-4 py-2 rounded-xl text-gray-300 hover:text-white transition hover:bg-gray-900"
+                    >
+                        Sign In
+                    </Link>
+                </div>
+            </nav>
 
             {/* Hero Section */}
-            <section className="flex flex-col items-center justify-center text-center py-16 px-6">
-                <h2 className="text-5xl font-bold mb-6 text-teal-400">Empowering Developers 🚀</h2>
-                <p className="max-w-3xl text-lg text-gray-300 leading-relaxed">
-                    Pulse Check is a modern API testing suite built with MERN + Next.js.
-                    Our mission is to simplify API development by providing a clean, fast, and developer-centric tool
-                    that blends functionality with style.
+            <section className="relative flex flex-col items-center justify-center text-center py-20 px-6 overflow-hidden">
+                <div className="absolute w-[500px] h-[500px] bg-teal-500/10 rounded-full blur-3xl -top-24 pointer-events-none"></div>
+
+                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gray-900/90 border border-gray-800 text-teal-400 text-xs font-semibold mb-6 shadow-inner">
+                    About Pulse Check
+                </div>
+
+                <h1 className="text-4xl sm:text-6xl font-black tracking-tight max-w-3xl text-white leading-tight">
+                    Empowering Developers with{' '}
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 via-cyan-300 to-blue-500">
+                        Frictionless API Testing
+                    </span>
+                </h1>
+
+                <p className="mt-6 text-base sm:text-lg text-gray-400 max-w-2xl leading-relaxed">
+                    Pulse Check was engineered to provide developers with a blazingly fast, aesthetically pleasing, and ultra-reliable suite for testing RESTful services and APIs.
                 </p>
             </section>
 
-            {/* Team / Features Section */}
-            <section className="grid grid-cols-1 md:grid-cols-3 gap-8 px-12 py-12">
-                <div className="bg-gray-800/70 backdrop-blur-md p-6 rounded-xl shadow-lg hover:scale-105 transition-transform duration-300">
-                    <h3 className="text-2xl font-semibold text-teal-300 mb-3">💡 Innovation</h3>
-                    <p className="text-gray-400">
-                        We believe in building tools that inspire creativity and streamline workflows.
+            {/* Pillars / Features */}
+            <section className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6 px-6 md:px-12 py-8">
+                <div className="bg-gray-900/60 border border-gray-800/80 p-8 rounded-3xl shadow-lg">
+                    <div className="w-12 h-12 rounded-2xl bg-teal-500/10 border border-teal-500/20 text-teal-400 flex items-center justify-center text-2xl mb-6">
+                        💡
+                    </div>
+                    <h2 className="text-xl font-bold text-white mb-2">Simplicity First</h2>
+                    <p className="text-sm text-gray-400 leading-relaxed">
+                        No cluttered panels or bloated enterprise setup. Just configure your endpoint, send your payload, and inspect crisp results instantly.
                     </p>
                 </div>
 
-                <div className="bg-gray-800/70 backdrop-blur-md p-6 rounded-xl shadow-lg hover:scale-105 transition-transform duration-300">
-                    <h3 className="text-2xl font-semibold text-blue-400 mb-3">🤝 Collaboration</h3>
-                    <p className="text-gray-400">
-                        Designed for teams and individuals, Pulse Check makes API testing accessible and shareable.
+                <div className="bg-gray-900/60 border border-gray-800/80 p-8 rounded-3xl shadow-lg">
+                    <div className="w-12 h-12 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center text-2xl mb-6">
+                        ⚡
+                    </div>
+                    <h2 className="text-xl font-bold text-white mb-2">Maximum Performance</h2>
+                    <p className="text-sm text-gray-400 leading-relaxed">
+                        Accurate microsecond timing calculations, payload metrics, and CORS-free backend proxying guarantee you get dependable responses every time.
                     </p>
                 </div>
 
-                <div className="bg-gray-800/70 backdrop-blur-md p-6 rounded-xl shadow-lg hover:scale-105 transition-transform duration-300">
-                    <h3 className="text-2xl font-semibold text-pink-400 mb-3">⚡ Performance</h3>
-                    <p className="text-gray-400">
-                        Speed and precision are at the core of our design, ensuring developers stay productive.
+                <div className="bg-gray-900/60 border border-gray-800/80 p-8 rounded-3xl shadow-lg">
+                    <div className="w-12 h-12 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center text-2xl mb-6">
+                        🔒
+                    </div>
+                    <h2 className="text-xl font-bold text-white mb-2">Secure & Private</h2>
+                    <p className="text-sm text-gray-400 leading-relaxed">
+                        Save requests locally or securely sync with your account with industry standard bcrypt hashing and JWT token authentication.
                     </p>
                 </div>
             </section>
 
             {/* Call to Action */}
-            <section className="text-center py-12">
-                <Link href="/tool">
-                    <button className="bg-gradient-to-r from-teal-400 to-blue-500 text-black font-bold px-8 py-4 rounded-lg hover:from-teal-300 hover:to-blue-400 transition">
-                        Try the Tool Now
-                    </button>
-                </Link>
+            <section className="text-center py-16 px-6">
+                <div className="max-w-3xl mx-auto bg-gradient-to-r from-teal-900/30 via-gray-900 to-blue-900/30 border border-gray-800 rounded-3xl p-10">
+                    <h3 className="text-2xl sm:text-3xl font-extrabold text-white mb-3">
+                        Ready to elevate your API development?
+                    </h3>
+                    <p className="text-gray-400 text-sm mb-6 max-w-md mx-auto">
+                        Jump right into the workspace and test your first endpoint in seconds.
+                    </p>
+                    <Link
+                        href="/tool"
+                        className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl bg-gradient-to-r from-teal-400 to-blue-500 text-gray-950 font-bold hover:from-teal-300 hover:to-blue-400 transition shadow-lg shadow-teal-500/20"
+                    >
+                        <span>Open Workspace</span>
+                        <span>→</span>
+                    </Link>
+                </div>
             </section>
 
             {/* Footer */}
-            <footer className="text-center py-6 border-t border-gray-700 text-gray-500 text-sm">
-                © {new Date().getFullYear()} Pulse Check | Built with MERN + Next.js + Tailwind CSS
+            <footer className="mt-auto py-8 border-t border-gray-900 text-center text-gray-500 text-xs px-6">
+                © {new Date().getFullYear()} Pulse Check. Built with MERN + Next.js + Tailwind CSS
             </footer>
         </div>
     );
