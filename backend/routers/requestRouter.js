@@ -2,93 +2,96 @@ const express = require("express");
 const router = express.Router();
 const Request = require("../models/requestModel");
 const jwt = require("jsonwebtoken");
+const { testApi } = require("../controllers/apicontroller");
 
+const JWT_SECRET = process.env.JWT_SECRET || "pulse_secret_key_default";
+
+// Optional authentication middleware
 const authenticate = (req, res, next) => {
-    const token = req.headers.authorization?.split(" ")[1];
+    const authHeader = req.headers.authorization;
+    const token = authHeader && authHeader.startsWith("Bearer ") ? authHeader.split(" ")[1] : authHeader;
     if (!token) return res.status(401).json({ error: "No token provided" });
     try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
-    next();
+        const decoded = jwt.verify(token, JWT_SECRET);
+        req.user = decoded;
+        next();
     } catch (err) {
-    res.status(401).json({ error: "Invalid token" });
+        res.status(401).json({ error: "Invalid or expired token" });
     }
 };
 
-router.post("/add", (req, res) => {
-    console.log(req.body);
-    new Model(req.body)
-    .save()
-    .then((result) => {
+// Route to proxy / test external API calls (bypasses browser CORS)
+router.post("/proxy", testApi);
+router.post("/test-api", testApi);
+
+// Save a new request
+router.post("/add", async (req, res) => {
+    try {
+        const doc = new Request(req.body);
+        const result = await doc.save();
+        res.status(201).json(result);
+    } catch (err) {
+        console.error("Error saving request:", err);
+        res.status(500).json({ error: err.message || "Failed to save request" });
+    }
+});
+
+// Get all requests
+router.get("/getall", async (req, res) => {
+    try {
+        const result = await Request.find().sort({ createdAt: -1 });
         res.status(200).json(result);
-    })
-    .catch((err) => {
-        res.status(500).json(err);
-        console.log(err);
-    });
+    } catch (err) {
+        console.error("Error fetching requests:", err);
+        res.status(500).json({ error: err.message || "Failed to fetch requests" });
+    }
 });
 
-router.get("/delete", (req, res) => {
-    res.send("Hello from User's Delete Route");
-});
-
-router.get("/update", (req, res) => {
-    res.send("Hello from User's Update Route");
-});
-
-router.get("/getall", (req, res) => {
-    Model.find()
-    .then((result) => {
+// Get request by ID
+router.get("/getbyid/:id", async (req, res) => {
+    try {
+        const result = await Request.findById(req.params.id);
+        if (!result) return res.status(404).json({ error: "Request not found" });
         res.status(200).json(result);
-    })
-    .catch((err) => {
-        res.status(500).json(err);
-        console.log(err);
-    });
+    } catch (err) {
+        console.error("Error fetching request by ID:", err);
+        res.status(500).json({ error: err.message || "Failed to fetch request" });
+    }
 });
 
-router.get("/getbyid/:id", (req, res) => {
-    Model.findById(req.params.id)
-    .then((result) => {
-        res.status(200).json(result);
-    })
-    .catch((err) => {
-        res.status(500).json(err);
-        console.log(err);
-    });
+// Delete request by ID
+router.delete("/delete/:id", async (req, res) => {
+    try {
+        const result = await Request.findByIdAndDelete(req.params.id);
+        if (!result) return res.status(404).json({ error: "Request not found" });
+        res.status(200).json({ message: "Request deleted successfully", result });
+    } catch (err) {
+        console.error("Error deleting request:", err);
+        res.status(500).json({ error: err.message || "Failed to delete request" });
+    }
 });
 
-router.delete("/delete/:id", (req, res) => {
-    Model.findByIdAndDelete(req.params.id)
-    .then((result) => {
+// Update request by ID
+router.put("/update/:id", async (req, res) => {
+    try {
+        const result = await Request.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        if (!result) return res.status(404).json({ error: "Request not found" });
         res.status(200).json(result);
-    })
-    .catch((err) => {
-        res.status(500).json(err);
-        console.log(err);
-    });
+    } catch (err) {
+        console.error("Error updating request:", err);
+        res.status(500).json({ error: err.message || "Failed to update request" });
+    }
 });
 
-router.put("/update/:id", (req, res) => {
-    Model.findByIdAndUpdate(req.params.id, req.body, { new: true })
-    .then((result) => {
+// Get requests by user ID
+router.get("/getbyuser/:userId", async (req, res) => {
+    try {
+        const result = await Request.find({ user: req.params.userId }).sort({ createdAt: -1 });
         res.status(200).json(result);
-    })
-    .catch((err) => {
-        res.status(500).json(err);
-        console.log(err);
-    });
-});
-
-router.get("/getbyemail/:email", (req, res) => {
-    Model.find({ email: req.params.email })
-    .then((result) => {
-        res.status(200).json(result);
-    })
-    .catch((err) => {
-        res.status(500).json(err);
-        console.log(err);
-    }); 
+    } catch (err) {
+        console.error("Error fetching requests for user:", err);
+        res.status(500).json({ error: err.message || "Failed to fetch user requests" });
+    }
 });
 
 module.exports = router;

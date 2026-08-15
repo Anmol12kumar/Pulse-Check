@@ -1,167 +1,242 @@
-const express = require("express"); //req is the snippet for request
-const jwt = require("jsonwebtoken"); //Importing the jsonwebtoken library for handling JWTs
-require("dotenv").config(); //Loading environment variables from a .env file
+const express = require("express");
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcrypt");
+const nodemailer = require("nodemailer");
+require("dotenv").config();
 
-const Model = require("../models/userModel.js"); //Importing the user model
+const Model = require("../models/userModel.js");
 
-const router = express.Router(); //Creating a new router object
+const router = express.Router();
+const JWT_SECRET = process.env.JWT_SECRET || "pulse_secret_key_default";
 
-router.post("/add", (req, res) => {
-  //Defining a route for the root URL of this router
-  // res.send("Hello from User's Add Route");         //Sending a response when the root URL of this router is accessed
-    console.log(req.body);
-
-    new Model(req.body)
-    .save() //Saving the user data to the database
-    .then((result) => {
-      //Handling the successful save operation
-      res.status(200).json(result); //Sending a JSON response with the saved user data
-    })
-    .catch((err) => {
-      res.status(500).json(err); //Handling any errors that occur during the save operation
-        console.log(err);
-    });
-});
-
-router.get("/delete", (req, res) => {
-  //Defining a route for the '/delete' URL of this router
-  res.send("Hello from User's Delete Route"); //Sending a response when the '/delete' URL of this router is accessed
-});
-
-router.get("/update", (req, res) => {
-  //Defining a route for the '/update' URL of this router
-  res.send("Hello from User's Update Route"); //Sending a response when the '/update' URL of this router is accessed
-});
-
-router.get("/getall", (req, res) => {
-  //Defining a route for the '/getall' URL of this router
-  Model.find() //Finding all user documents in the database
-    .then((result) => {
-      //Handling the successful find operation
-      res.status(200).json(result); //Sending a JSON response with all user data
-    })
-    .catch((err) => {
-      res.status(500).json(err); //Handling any errors that occur during the find operation
-        console.log(err);
-    });
-});
-
-router.get("/getbyid/:id", (req, res) => {
-  //Defining a route for the '/getbyid' URL of this router
-    Model.findById(req.params.id)
-    .then((result) => {
-        res.status(200).json(result);
-    })
-    .catch((err) => {
-        res.status(500).json(err);
-        console.log(err);
-    });
-});
-
-router.get("/getbycity/:city", (req, res) => {
-  //Defining a route for the '/getbycity' URL of this router
-  Model.find({ city: req.params.city }) //Finding user documents in the database that match the specified city
-    .then((result) => {
-      //Handling the successful find operation
-      res.status(200).json(result); //Sending a JSON response with the matching user data
-    })
-    .catch((err) => {
-      res.status(500).json(err); //Handling any errors that occur during the find operation
-        console.log(err);
-    });
-});
-
-router.delete("/delete/:id", (req, res) => {
-  //Defining a route for the '/deletebyid' URL of this router
-  Model.findByIdAndDelete(req.params.id) //Finding and deleting a user document by its ID
-    .then((result) => {
-      res.status(200).json(result); //Sending a JSON response confirming deletion
-    })
-    .catch((err) => {
-      res.status(500).json(err); //Handling any errors that occur during the delete operation
-        console.log(err);
-    });
-});
-
-router.put("/update/:id", (req, res) => {
-  //Defining a route for the '/updatebyid' URL of this router
-  Model.findByIdAndUpdate(req.params.id, req.body, { new: true }) //Finding and updating a user document by its ID with the provided data
-    .then((result) => {
-      res.status(200).json(result); //Sending a JSON response with the updated user data
-    })
-    .catch((err) => {
-      res.status(500).json(err); //Handling any errors that occur during the update operation
-        console.log(err);
-    });
-});
-
-router.get("/getbyemail/:email", (req, res) => {
-  //Defining a route for the '/getbyid' URL of this router
-    Model.find({ email: req.params.email })
-    .then((result) => {
-        res.status(200).json(result);
-    })
-    .catch((err) => {
-        res.status(500).json(err);
-        console.log(err);
-    });
-});
-
-router.post("/authenticate", (req, res) => {
-  //Defining a route for user authentication
-  Model.findOne(req.body) //Finding a user document that matches the provided credentials
-    .then((result) => {
-        if (result) {
-        //Authentication successful
-        //generate JWT token
-        const { _id, name, email } = result; //Destructuring user details from the result
-
-        const payload = { _id, name, email }; //Creating a payload for the JWT
-
-        jwt.sign(
-            payload,
-            process.env.JWT_SECRET,
-            { expiresIn: "2h" },
-            (err, token) => {
-            if (err) {
-                console.log(err);
-                res.status(500).json({ error: "Error in token generation" });
-            } else {
-              res.status(200).json({ token }); //Sending the generated JWT token as a response
-            }
-            }
-        );
-        } else {
-        //Authentication failed
-        res.status(401).json({ error: "Invalid Credentials" });
+// Defining a route for adding/registering a user
+router.post("/add", async (req, res) => {
+    try {
+        const { name, email, password, city, role } = req.body;
+        
+        if (!name || !email || !password) {
+            return res.status(400).json({ error: "Name, email, and password are required" });
         }
-    })
-    .catch((err) => {
-      res.status(500).json(err); //Handling any errors that occur during the find operation
-        console.log(err);
-    });
+
+        const existingUser = await Model.findOne({ email });
+        if (existingUser) {
+            return res.status(400).json({ error: "Email is already registered" });
+        }
+
+        const user = new Model({ name, email, password, city, role });
+        const result = await user.save();
+        
+        const userObj = result.toObject();
+        delete userObj.password;
+        
+        res.status(201).json(userObj);
+    } catch (err) {
+        console.error("Error creating user:", err);
+        if (err.code === 11000) {
+            return res.status(400).json({ error: "Email is already registered" });
+        }
+        if (err.name === "ValidationError") {
+            return res.status(400).json({ error: err.message });
+        }
+        res.status(500).json({ error: "Failed to create user" });
+    }
 });
 
+// Get all users
+router.get("/getall", async (req, res) => {
+    try {
+        const result = await Model.find().select("-password").sort({ createdAt: -1 });
+        res.status(200).json(result);
+    } catch (err) {
+        console.error("Error fetching all users:", err);
+        res.status(500).json({ error: "Failed to fetch users" });
+    }
+});
+
+// Get user by ID
+router.get("/getbyid/:id", async (req, res) => {
+    try {
+        const result = await Model.findById(req.params.id).select("-password");
+        if (!result) return res.status(404).json({ error: "User not found" });
+        res.status(200).json(result);
+    } catch (err) {
+        console.error("Error fetching user by ID:", err);
+        res.status(500).json({ error: "Failed to fetch user" });
+    }
+});
+
+// Get user by city
+router.get("/getbycity/:city", async (req, res) => {
+    try {
+        const result = await Model.find({ city: req.params.city }).select("-password");
+        res.status(200).json(result);
+    } catch (err) {
+        console.error("Error fetching users by city:", err);
+        res.status(500).json({ error: "Failed to fetch users by city" });
+    }
+});
+
+// Get user by email
+router.get("/getbyemail/:email", async (req, res) => {
+    try {
+        const result = await Model.findOne({ email: req.params.email }).select("-password");
+        if (!result) return res.status(404).json({ error: "User not found" });
+        res.status(200).json(result);
+    } catch (err) {
+        console.error("Error fetching user by email:", err);
+        res.status(500).json({ error: "Failed to fetch user by email" });
+    }
+});
+
+// Delete user by ID
+router.delete("/delete/:id", async (req, res) => {
+    try {
+        const result = await Model.findByIdAndDelete(req.params.id).select("-password");
+        if (!result) return res.status(404).json({ error: "User not found" });
+        res.status(200).json({ message: "User deleted successfully", result });
+    } catch (err) {
+        console.error("Error deleting user:", err);
+        res.status(500).json({ error: "Failed to delete user" });
+    }
+});
+
+// Update user by ID
+router.put("/update/:id", async (req, res) => {
+    try {
+        const updates = { ...req.body };
+        // If updating password, hash it properly
+        if (updates.password) {
+            updates.password = await bcrypt.hash(updates.password, 10);
+        }
+        const result = await Model.findByIdAndUpdate(req.params.id, updates, { new: true }).select("-password");
+        if (!result) return res.status(404).json({ error: "User not found" });
+        res.status(200).json(result);
+    } catch (err) {
+        console.error("Error updating user:", err);
+        res.status(500).json({ error: "Failed to update user" });
+    }
+});
+
+// Authenticate / Login user
+router.post("/authenticate", async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        if (!email || !password) {
+            return res.status(400).json({ error: "Email and password are required" });
+        }
+
+        const user = await Model.findOne({ email });
+        if (!user) return res.status(401).json({ error: "Invalid Credentials" });
+
+        const match = await bcrypt.compare(password, user.password);
+        if (!match) return res.status(401).json({ error: "Invalid Credentials" });
+
+        const payload = { _id: user._id, name: user.name, email: user.email, role: user.role };
+        const token = jwt.sign(payload, JWT_SECRET, { expiresIn: "7d" });
+
+        res.status(200).json({
+            message: "Login successful",
+            token,
+            user: payload,
+        });
+    } catch (err) {
+        console.error("Authentication error:", err);
+        res.status(500).json({ error: "Server error during authentication" });
+    }
+});
+
+// Forgot password - send reset email
+router.post("/forgot-password", async (req, res) => {
+    try {
+        const { email } = req.body;
+        if (!email) return res.status(400).json({ error: "Email is required" });
+
+        const user = await Model.findOne({ email });
+        if (!user) return res.status(404).json({ error: "User not found" });
+
+        // Generate a reset token (expires in 15 minutes)
+        const resetToken = jwt.sign(
+            { _id: user._id, email: user.email },
+            JWT_SECRET,
+            { expiresIn: "15m" }
+        );
+
+        // Build reset link
+        const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+        const resetLink = `${frontendUrl}/reset-password/${resetToken}`;
+
+        if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+            console.warn("EMAIL_USER or EMAIL_PASS not configured in .env. Returning reset link for dev/testing.");
+            return res.status(200).json({
+                message: "Reset link generated (Dev mode: email credentials not configured)",
+                resetLink,
+            });
+        }
+
+        // Configure nodemailer transporter
+        const transporter = nodemailer.createTransport({
+            service: process.env.EMAIL_SERVICE || "gmail",
+            auth: {
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASS,
+            },
+        });
+
+        // Send email
+        await transporter.sendMail({
+            from: process.env.EMAIL_USER,
+            to: email,
+            subject: "Pulse Check - Password Reset",
+            html: `
+                <div style="font-family: sans-serif; max-width: 500px; margin: auto; padding: 20px; background: #111827; color: #f3f4f6; border-radius: 12px;">
+                    <h2 style="color: #2dd4bf; margin-bottom: 8px;">Pulse Check</h2>
+                    <p>Hi <strong>${user.name}</strong>,</p>
+                    <p>You requested a password reset. Click the button below to set a new password:</p>
+                    <div style="margin: 24px 0;">
+                        <a href="${resetLink}" style="display: inline-block; background: linear-gradient(to right, #2dd4bf, #3b82f6); color: #000000; font-weight: bold; padding: 12px 24px; border-radius: 8px; text-decoration: none;">
+                            Reset Password
+                        </a>
+                    </div>
+                    <p style="color: #9ca3af; font-size: 12px;">This link will expire in 15 minutes. If you did not request this, please ignore this email.</p>
+                </div>
+            `,
+        });
+
+        res.status(200).json({ message: "Reset link sent to your email" });
+    } catch (err) {
+        console.error("Forgot password error:", err);
+        res.status(500).json({ error: "Failed to process forgot password request" });
+    }
+});
+
+// Reset password with token
 router.post("/reset-password/:token", async (req, res) => {
-  try {
-    const { token } = req.params;
-    const { password } = req.body;
+    try {
+        const { token } = req.params;
+        const { password } = req.body;
 
-    // Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.id);
+        if (!password) {
+            return res.status(400).json({ error: "New password is required" });
+        }
 
-    if (!user) return res.status(404).json({ error: "User not found" });
+        let decoded;
+        try {
+            decoded = jwt.verify(token, JWT_SECRET);
+        } catch (jwtErr) {
+            return res.status(400).json({ error: "Invalid or expired reset token" });
+        }
 
-    // Hash new password
-    user.password = await bcrypt.hash(password, 10);
-    await user.save();
+        const user = await Model.findById(decoded._id || decoded.id);
+        if (!user) return res.status(404).json({ error: "User not found" });
 
-    res.status(200).json({ message: "Password reset successful" });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Invalid or expired token" });
-  }
-}); 
+        user.password = password; // pre-save hook will hash it
+        await user.save();
 
-module.exports = router; //Exporting the router object to be used in other files
+        res.status(200).json({ message: "Password reset successful! You can now log in." });
+    } catch (err) {
+        console.error("Reset password error:", err);
+        res.status(500).json({ error: "Failed to reset password" });
+    }
+});
+
+module.exports = router;
